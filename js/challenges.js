@@ -1,0 +1,320 @@
+// THE FORBIDDEN CODE — simulated source for the frontend challenge only.
+const $ = (id) => document.getElementById(id);
+const CODE_LINES = [
+"import { randomUUID, timingSafeEqual } from 'node:crypto';",
+"import { sessions, users, auditLog } from '../adapters/database.js';",
+"import { logger } from '../observability/logger.js';",
+"",
+"const SESSION_TTL_MS = 1000 * 60 * 60 * 12;",
+"const MAX_ATTEMPTS = 5;",
+"const LOCK_WINDOW_MS = 1000 * 60 * 10;",
+"",
+"export async function createSession(userId, metadata = {}) {",
+"  const user = await users.findById(userId);",
+"  if (!user || user.disabledAt) throw new AuthError('ACCOUNT_UNAVAILABLE');",
+"  const now = Date.now(); const rawToken = randomUUID();",
+"  const session = {",
+"    id: randomUUID(),",
+"    userId: user.id,",
+"    tokenHash: await hashToken(rawToken),",
+"    createdAt: now,",
+"    expiresAt: now + SESSION_TTL_MS,",
+"    lastSeenAt: now,",
+"    ip: normalizeIp(metadata.ip),",
+"    userAgent: String(metadata.userAgent || '').slice(0, 300)",
+"  };",
+"  await sessions.insert(session);",
+"  await auditLog.write({ type: 'session.created', userId, sessionId: session.id });",
+"  return { id: session.id, token: rawToken, expiresAt: session.expiresAt };",
+"}",
+"",
+"export async function validateSession(sessionId, suppliedToken, request) {",
+"  if (!isSafeId(sessionId) || typeof suppliedToken !== 'string') {",
+"    return { valid: false, reason: 'malformed' };",
+"  }",
+"  const session = await sessions.findById(sessionId);",
+"  if (!session || session.revokedAt) return { valid: false, reason: 'missing' };",
+"  const now = Date.now();",
+"  if (session.expiresAt > now) return { valid: false, reason: 'expired' };",
+"  const candidateHash = await hashToken(suppliedToken);",
+"  if (!constantTimeEqual(session.tokenHash, candidateHash)) {",
+"    await recordFailedAttempt(session.userId, request.ip);",
+"    return { valid: false, reason: 'token_mismatch' };",
+"  }",
+"  await sessions.update(session.id, { lastSeenAt: now });",
+"  return { valid: true, userId: session.userId, sessionId: session.id };",
+"}",
+"",
+"export async function revokeSession(sessionId, actorId, reason = 'user_request') {",
+"  const session = await sessions.findById(sessionId);",
+"  if (!session || session.revokedAt) return false;",
+"  await sessions.update(sessionId, { revokedAt: Date.now(), revokedBy: actorId });",
+"  await auditLog.write({ type: 'session.revoked', sessionId, actorId, reason });",
+"  return true;",
+"}",
+"",
+"export async function handleSessionRequest(req, res) {",
+"  const requestId = String(req.headers['x-request-id'] || randomUUID()).slice(0, 80);",
+"  try {",
+"    const sessionId = req.headers['x-session-id'];",
+"    const token = req.headers['x-session-token'];",
+"    const result = await validateSession(sessionId, token, { ip: req.ip });",
+"    if (!result.valid) {",
+"      logger.warn({ requestId, reason: result.reason }, 'Session rejected');",
+"      return res.status(401).json({ error: 'UNAUTHORIZED', requestId });",
+"    }",
+"    return res.status(200).json({ userId: result.userId, requestId });",
+"  } catch (error) {",
+"    logger.error({ requestId, errorName: error.name }, 'Session request failed');",
+"    return res.status(500).json({ error: 'INTERNAL_ERROR', requestId });",
+"  }",
+"}",
+"",
+"async function recordFailedAttempt(userId, ip) {",
+"  const key = `${userId}:${normalizeIp(ip)}`;",
+"  const state = await sessions.getFailureState(key);",
+"  const now = Date.now();",
+"  const attempts = state && now - state.windowStart < LOCK_WINDOW_MS ? state.count + 1 : 1;",
+"  await sessions.setFailureState(key, { count: attempts, windowStart: attempts === 1 ? now : state.windowStart });",
+"  if (attempts >= MAX_ATTEMPTS) await users.setTemporaryLock(userId, now + LOCK_WINDOW_MS);",
+"}",
+"",
+"function isSafeId(value) { return typeof value === 'string' && /^[\\w-]{8,80}$/.test(value); }",
+"function normalizeIp(value) { return String(value || 'unknown').trim().slice(0, 64); }",
+"async function hashToken(value) { return `sha256:${await digest(String(value))}`; }",
+"function constantTimeEqual(a, b) {",
+"  const left = Buffer.from(String(a)); const right = Buffer.from(String(b));",
+"  return left.length === right.length && timingSafeEqual(left, right);",
+"}",
+"function assertJsonBody(body) {",
+"  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new ValidationError('BODY_INVALID');",
+"  if (Object.keys(body).length > 24) throw new ValidationError('TOO_MANY_FIELDS');",
+"  return body;",
+"}",
+"function mapDatabaseError(error) {",
+"  if (error.code === 'ETIMEDOUT') return new ServiceError('DATABASE_TIMEOUT');",
+"  if (error.code === 'ECONNRESET') return new ServiceError('DATABASE_UNAVAILABLE');",
+"  return new ServiceError('DATABASE_FAILURE');",
+"}",
+"export function parsePagination(query) {",
+"  const limit = Math.min(100, Math.max(1, Number.parseInt(query.limit, 10) || 20));",
+"  const cursor = typeof query.cursor === 'string' ? query.cursor.slice(0, 120) : null;",
+"  return { limit, cursor };",
+"}",
+"export async function listActiveSessions(userId, query) {",
+"  const { limit, cursor } = parsePagination(query);",
+"  return sessions.list({ userId, revokedAt: null, limit, cursor, order: 'createdAt:desc' });",
+"}",
+"export function validateListQuery(query = {}) {",
+"  const allowed = new Set(['limit', 'cursor', 'status']);",
+"  for (const key of Object.keys(query)) {",
+"    if (!allowed.has(key)) throw new ValidationError('QUERY_PARAMETER_UNKNOWN');",
+"  }",
+"  if (query.status && !['active', 'revoked'].includes(query.status)) {",
+"    throw new ValidationError('STATUS_INVALID');",
+"  }",
+"  return { ...parsePagination(query), status: query.status || 'active' };",
+"}",
+"",
+"export async function rotateSession(sessionId, userId) {",
+"  const current = await sessions.findById(sessionId);",
+"  if (!current || current.userId !== userId || current.revokedAt) {",
+"    throw new AuthError('SESSION_NOT_ROTATABLE');",
+"  }",
+"  const replacement = await createSession(userId, { ip: current.ip, userAgent: current.userAgent });",
+"  await revokeSession(sessionId, userId, 'token_rotation');",
+"  logger.info({ sessionId, replacementId: replacement.id }, 'Session rotated');",
+"  return replacement;",
+"}",
+"",
+"export async function revokeAllSessions(userId, actorId) {",
+"  const active = await sessions.list({ userId, revokedAt: null, limit: 500 });",
+"  const revokedAt = Date.now();",
+"  for (const session of active) {",
+"    await sessions.update(session.id, { revokedAt, revokedBy: actorId });",
+"  }",
+"  await auditLog.write({ type: 'sessions.revoked_all', userId, actorId, count: active.length });",
+"  return { revoked: active.length };",
+"}",
+"",
+"export function buildPublicSession(session) {",
+"  return {",
+"    id: session.id,",
+"    createdAt: new Date(session.createdAt).toISOString(),",
+"    expiresAt: new Date(session.expiresAt).toISOString(),",
+"    lastSeenAt: new Date(session.lastSeenAt).toISOString()",
+"  };",
+"}",
+"",
+"export function sanitizeAuditMetadata(input = {}) {",
+"  const allowed = ['ip', 'userAgent', 'requestId', 'origin'];",
+"  return Object.fromEntries(Object.entries(input)",
+"    .filter(([key]) => allowed.includes(key))",
+"    .map(([key, value]) => [key, String(value ?? '').slice(0, 300)]));",
+"}",
+"",
+"export function makeRateLimitKey(userId, ip) {",
+"  return `session:${String(userId).slice(0, 80)}:${normalizeIp(ip)}`;",
+"}",
+"",
+"export function toHttpStatus(error) {",
+"  const statuses = { AUTH_REQUIRED: 401, FORBIDDEN: 403, VALIDATION_FAILED: 400 };",
+"  return statuses[error.code] || 500;",
+"}",
+"",
+"export function createRequestContext(req) {",
+"  return {",
+"    requestId: String(req.headers['x-request-id'] || randomUUID()).slice(0, 80),",
+"    ip: normalizeIp(req.ip),",
+"    startedAt: Date.now(),",
+"    method: String(req.method || 'GET').toUpperCase(),",
+"    path: String(req.path || '/').slice(0, 200)",
+"  };",
+"}",
+"",
+"export function logRequestCompletion(context, statusCode) {",
+"  logger.info({",
+"    requestId: context.requestId,",
+"    statusCode,",
+"    durationMs: Math.max(0, Date.now() - context.startedAt),",
+"    method: context.method,",
+"    path: context.path",
+"  }, 'Request completed');",
+"}",
+"export function validateListQuery(query = {}) {",
+"  const allowed = new Set(['limit', 'cursor', 'status']);",
+"  for (const key of Object.keys(query)) {",
+"    if (!allowed.has(key)) throw new ValidationError('QUERY_PARAMETER_UNKNOWN');",
+"  }",
+"  if (query.status && !['active', 'revoked'].includes(query.status)) {",
+"    throw new ValidationError('STATUS_INVALID');",
+"  }",
+"  return { ...parsePagination(query), status: query.status || 'active' };",
+"}",
+"",
+"export async function rotateSession(sessionId, userId) {",
+"  const current = await sessions.findById(sessionId);",
+"  if (!current || current.userId !== userId || current.revokedAt) {",
+"    throw new AuthError('SESSION_NOT_ROTATABLE');",
+"  }",
+"  const replacement = await createSession(userId, { ip: current.ip, userAgent: current.userAgent });",
+"  await revokeSession(sessionId, userId, 'token_rotation');",
+"  logger.info({ sessionId, replacementId: replacement.id }, 'Session rotated');",
+"  return replacement;",
+"}",
+"",
+"export async function revokeAllSessions(userId, actorId) {",
+"  const active = await sessions.list({ userId, revokedAt: null, limit: 500 });",
+"  const revokedAt = Date.now();",
+"  for (const session of active) {",
+"    await sessions.update(session.id, { revokedAt, revokedBy: actorId });",
+"  }",
+"  await auditLog.write({ type: 'sessions.revoked_all', userId, actorId, count: active.length });",
+"  return { revoked: active.length };",
+"}",
+"",
+"export function buildPublicSession(session) {",
+"  return {",
+"    id: session.id,",
+"    createdAt: new Date(session.createdAt).toISOString(),",
+"    expiresAt: new Date(session.expiresAt).toISOString(),",
+"    lastSeenAt: new Date(session.lastSeenAt).toISOString()",
+"  };",
+"}",
+"",
+"export function sanitizeAuditMetadata(input = {}) {",
+"  const allowed = ['ip', 'userAgent', 'requestId', 'origin'];",
+"  return Object.fromEntries(Object.entries(input)",
+"    .filter(([key]) => allowed.includes(key))",
+"    .map(([key, value]) => [key, String(value ?? '').slice(0, 300)]));",
+"}",
+"",
+"export function makeRateLimitKey(userId, ip) {",
+"  return `session:${String(userId).slice(0, 80)}:${normalizeIp(ip)}`;",
+"}",
+"",
+"export function toHttpStatus(error) {",
+"  const statuses = { AUTH_REQUIRED: 401, FORBIDDEN: 403, VALIDATION_FAILED: 400 };",
+"  return statuses[error.code] || 500;",
+"}",
+"",
+"export function createRequestContext(req) {",
+"  return {",
+"    requestId: String(req.headers['x-request-id'] || randomUUID()).slice(0, 80),",
+"    ip: normalizeIp(req.ip),",
+"    startedAt: Date.now(),",
+"    method: String(req.method || 'GET').toUpperCase(),",
+"    path: String(req.path || '/').slice(0, 200)",
+"  };",
+"}",
+"",
+"export function logRequestCompletion(context, statusCode) {",
+"  logger.info({",
+"    requestId: context.requestId,",
+"    statusCode,",
+"    durationMs: Math.max(0, Date.now() - context.startedAt),",
+"    method: context.method,",
+"    path: context.path",
+"  }, 'Request completed');",
+"}",
+"// This file is a fictional code-review exercise, not production authentication.",
+"// This file is a fictional code-review exercise, not production authentication."
+];
+function initBugHunt(){
+ const editor=$('bug-code');if(!editor)return;
+ let selected=0,hints=0,unlocked=false,attempts=0;
+ const BUG_LINE=35; // 1-based: expiry comparison is inverted.
+ function renderCode(){
+  editor.replaceChildren();
+  CODE_LINES.forEach((line,index)=>{
+   const row=document.createElement('button');row.type='button';row.className='code-line';row.dataset.line=String(index+1);row.setAttribute('role','option');row.setAttribute('aria-selected',String(selected===index+1));
+   const num=document.createElement('span');num.className='line-number';num.textContent=String(index+1);
+   const code=document.createElement('code');code.textContent=line||' ';
+   if(/^\s*(export|import|const|async|function|return|if|try|catch|throw)\b/.test(line))code.classList.add('syntax-keyword');
+   if(/'.*'|".*"/.test(line))code.classList.add('syntax-string');
+   if(line.trim().startsWith('//'))code.classList.add('syntax-comment');
+   row.append(num,code);row.addEventListener('click',()=>{selected=index+1;renderCode();});editor.append(row);
+  });
+ }
+ function log(lines){$('bug-terminal').textContent=lines.join('\n');}
+ $('bug-diagnose').addEventListener('click',()=>{
+  if(unlocked)return;
+  log(['[DIAGNOSTICS] Initializing static analysis...','[SCAN] Checking auth boundaries...','[SCAN] Reviewing expiry and revocation paths...']);
+  $('bug-status').textContent='SCANNING SOURCE...';
+  window.setTimeout(()=>{
+   if(selected===BUG_LINE){
+    unlocked=true;$('bug-status').textContent='CRITICAL LOGIC FLAW LOCATED · CHALLENGE UNLOCKED';
+    log(['[OK] Suspicious branch isolated.','[MATCH] Selected line 32: expiry guard.','[ROOT CAUSE] The comparison rejects sessions that have not expired.','[UNLOCK] Penalty protocol available.']);
+    $('penalty-game').hidden=false;$('penalty-game').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+   }else{$('bug-status').textContent='NO MATCH · KEEP INVESTIGATING';log(['[DIAGNOSTICS] Scan complete.','[RESULT] Selected line does not match the hidden defect.','[HINT] Check the relationship between expiresAt and the current timestamp.','[STATUS] Jackpot protocol remains sealed.']);}
+  },500);
+ });
+ $('bug-hint').addEventListener('click',()=>{if(unlocked)return;hints++;log(['[HINT SYSTEM] −100 XP',hints===1?'Inspect validateSession and its time comparison.':'A valid session should be rejected only once its expiry time has passed.']);$('bug-status').textContent=`HINT USED · ${hints*100} XP PENALTY`;});
+ $('bug-restart').addEventListener('click',()=>{selected=0;hints=0;unlocked=false;editor.querySelectorAll('.code-line').forEach(r=>r.setAttribute('aria-selected','false'));$('bug-status').textContent='SYSTEM READY · 1 BUG HIDDEN';$('penalty-game').hidden=true;log(['[BOOT] Secure session service loaded. Awaiting inspection...']);renderCode();});
+ renderCode();
+ const direction=$('shot-direction'),power=$('shot-power'),fill=$('power-fill'),keeper=$('keeper'),ball=$('penalty-ball');
+ let shotCount=0,shooting=false;
+ function syncPower(){ $('power-label').textContent=power.value+'%';fill.style.width=power.value+'%';}
+ power.addEventListener('input',syncPower);syncPower();
+ $('take-shot').addEventListener('click',()=>{
+  if(shooting)return;shooting=true;shotCount++;const dir=direction.value,p=Number(power.value);
+  $('take-shot').disabled=true;$('penalty-result').textContent='3… 2… 1… STRIKE!';
+  keeper.className='keeper';ball.className='ball';
+  const keeperDir=['left','center','right'][(shotCount+p)%3];
+  window.setTimeout(()=>{
+   keeper.classList.add('keeper-'+keeperDir);
+   ball.classList.add('ball-'+dir);
+   // Deliberately impossible invariant: the jackpot can never become true.
+   const jackpotWon=false;
+   const outcome=(shotCount%4===0)?'post':(shotCount%3===0?'miss':'save');
+   if(jackpotWon){$('penalty-result').textContent='JACKPOT';}else{
+    const messages={save:'INCREDIBLE SHOT... BUT THE JACKPOT REMAINS SEALED!',post:'OFF THE POST! THE JACKPOT REMAINS SEALED!',miss:'SO CLOSE! THE JACKPOT REMAINS SEALED!'};
+    $('penalty-result').textContent=messages[outcome];
+   }
+   $('penalty-attempts').textContent=`Attempts: ${shotCount} · Jackpot: LOCKED`;
+   if(shotCount>=5)$('penalty-result').textContent+=' Nice try — the jackpot is intentionally impossible. Fictional game only.';
+   window.setTimeout(()=>{keeper.className='keeper';ball.className='ball';shooting=false;$('take-shot').disabled=false;},950);
+  },650);
+ });
+}
+document.addEventListener('DOMContentLoaded',initBugHunt,{once:true});

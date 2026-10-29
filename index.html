@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="uz" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ABDULBOSIT.EXE — Developer Portfolio</title>
+  <meta name="description" content="Abdulbosit — dasturchi va texnologiya ishqibozi. IELTS 8.5, JavaScript, Node.js, Express, MongoDB. Loyihalar, yutuqlar va o'rganish yo'li." />
+  <meta name="theme-color" content="#0B1020" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="ABDULBOSIT.EXE — Developer Portfolio" />
+  <meta property="og:description" content="Building ideas into digital experiences." />
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Asosiy kontentga o'tish</a>
+
+  <div id="intro" class="intro" role="dialog" aria-modal="true" aria-labelledby="intro-title" hidden>
+    <div class="intro__panel">
+      <p id="intro-title" class="intro__brand">ABDULBOSIT<span>.EXE</span></p>
+      <pre id="boot-log" class="intro__log" aria-live="polite"></pre>
+      <div class="intro__actions">
+        <button id="enter-btn" class="btn btn--primary" type="button">Enter My World</button>
+        <button id="skip-btn" class="btn btn--ghost" type="button">Skip Intro</button>
+      </div>
+    </div>
+  </div>
+
+  <header class="site-header" id="site-header">
+    <a class="brand" href="#home" aria-label="ABDULBOSIT.EXE — bosh sahifa">ABDULBOSIT<span>.EXE</span></a>
+    <nav class="nav" id="nav" aria-label="Asosiy navigatsiya">
+      <ul class="nav__list">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#achievements">Achievements</a></li>
+        <li><a href="#skills">Skills</a></li>
+        <li><a href="#projects">Projects</a></li>
+        <li><a href="#typing">Typing</a></li>
+        <li><a href="#forbidden-code">Forbidden Code</a></li>
+        <li><a href="#journey">Journey</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="header__tools">
+      <button id="theme-universe" class="btn btn--secondary btn--sm" type="button" aria-haspopup="dialog" aria-controls="theme-dialog">✦ THEME UNIVERSE</button>
+      <button id="theme-toggle" class="icon-btn" type="button" aria-pressed="false" aria-label="Och mavzuga o'tish">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="menu-btn" class="icon-btn menu-btn" type="button" aria-expanded="false" aria-controls="nav" aria-label="Menyuni ochish">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <section id="home" class="hero" aria-labelledby="hero-title">
+      <div class="hero__bg" aria-hidden="true"><span class="orb orb--a"></span><span class="orb orb--b"></span><span class="grid-bg"></span></div>
+      <div class="container hero__inner">
+        <div class="hero__copy">
+          <p class="status-pill"><span class="dot" aria-hidden="true"></span><span id="status-text">DEVELOPER IN PROGRESS</span></p>
+          <h1 id="hero-title" class="hero__title">Building ideas into <span class="grad">digital experiences.</span></h1>
+          <p id="hero-tagline" class="hero__lead">Learning, building, experimenting, and turning ideas into practical software.</p>
+          <div class="hero__cta">
+            <a class="btn btn--primary" href="#achievements">Explore My World</a>
+            <a class="btn btn--secondary" href="#projects">View My Projects</a>
+            <a class="btn btn--ghost" href="#contact">Contact</a>
+          </div>
+          <ul id="hero-tech" class="chips" aria-label="Texnologiyalar"></ul>
+          <p id="availability" class="availability" hidden><span class="dot dot--green" aria-hidden="true"></span><span id="availability-text"></span></p>
+        </div>
+        <div class="hero__visual">
+          <div class="terminal" aria-label="Interaktiv terminal ko'rinishi">
+            <div class="terminal__bar"><i></i><i></i><i></i><span>abdulbosit.exe</span></div>
+            <pre id="terminal-body" class="terminal__body"></pre>
+          </div>
+          <div class="score-float" aria-label="IELTS 8.5">
+            <span class="score-float__n">8.5</span>
+            <span class="score-float__l">IELTS</span>
+          </div>
+        </div>
+      </div>
+      <a class="scroll-hint" href="#about" aria-label="Pastga aylantirish"><span></span></a>
+    </section>
+
+    <section id="about" class="section" aria-labelledby="about-title">
+      <div class="container">
+        <p class="eyebrow">01 / About</p>
+        <h2 id="about-title" class="section__title">Men haqimda</h2>
+        <dl id="about-list" class="about-grid"></dl>
+      </div>
+    </section>
+
+    <section id="achievements" class="section section--alt" aria-labelledby="ach-title">
+      <div class="container">
+        <p class="eyebrow">02 / Achievements</p>
+        <h2 id="ach-title" class="section__title">Yutuqlar</h2>
+        <p class="section__lead">Faqat tasdiqlangan natijalar. Har biri ochilganda «Achievement Unlocked» bildirishnomasi chiqadi.</p>
+        <div id="ach-grid" class="ach-grid"></div>
+      </div>
+    </section>
+
+    <section id="skills" class="section" aria-labelledby="skills-title">
+      <div class="container">
+        <p class="eyebrow">03 / Skills</p>
+        <h2 id="skills-title" class="section__title">Ko'nikmalar</h2>
+        <ul class="legend" aria-label="Daraja belgilari">
+          <li><i class="lvl lvl--used"></i>Used in projects</li>
+          <li><i class="lvl lvl--comfortable"></i>Comfortable</li>
+          <li><i class="lvl lvl--learning"></i>Learning</li>
+        </ul>
+        <div id="skills-grid" class="skills-grid"></div>
+      </div>
+    </section>
+
+    <section id="projects" class="section section--alt" aria-labelledby="projects-title">
+      <div class="container">
+        <p class="eyebrow">04 / Projects</p>
+        <h2 id="projects-title" class="section__title">Loyihalar</h2>
+        <div id="projects-grid" class="projects-grid"></div>
+      </div>
+    </section>
+
+    <section id="journey" class="section" aria-labelledby="journey-title">
+      <div class="container">
+        <p class="eyebrow">05 / Journey</p>
+        <h2 id="journey-title" class="section__title">O'rganish yo'li</h2>
+        <ol id="journey-list" class="timeline"></ol>
+      </div>
+    </section>
+
+    <section id="goals" class="section section--alt" aria-labelledby="goals-title">
+      <div class="container">
+        <p class="eyebrow">06 / Goals</p>
+        <h2 id="goals-title" class="section__title">Maqsadlar</h2>
+        <p class="section__lead">Bu yutuqlar emas — kelajakdagi yo'nalishlar.</p>
+        <ul id="goals-list" class="goals"></ul>
+      </div>
+    </section>
+
+
+    <section id="typing" class="section typing-section" aria-labelledby="typing-title">
+      <div class="container">
+        <p class="eyebrow">08 / Secret challenge</p>
+        <h2 id="typing-title" class="section__title">Neon Typing Arena</h2>
+        <p class="section__lead">99 WPM · 100% consistency — bu mening rekordim. Uni yangilang va maxfiy sovg'ani oching.</p>
+        <div class="typing-card">
+          <div class="typing-top"><span class="typing-live"><i></i> LIVE CHALLENGE</span><span class="typing-record">PERSONAL BEST <strong id="typing-best">99 WPM</strong></span></div>
+          <div class="typing-controls" aria-label="Sinov sozlamalari"><span>TEST LENGTH</span><div class="typing-durations"><button type="button" data-duration="15">15s</button><button type="button" data-duration="30" class="is-selected" aria-pressed="true">30s</button><button type="button" data-duration="60">60s</button><button type="button" data-duration="120">120s</button></div></div>
+          <div class="typing-stats"><div><small>WPM</small><strong id="typing-wpm">0</strong></div><div><small>RAW WPM</small><strong id="typing-raw">0</strong></div><div><small>ACCURACY</small><strong id="typing-accuracy">100%</strong></div><div><small>TIME</small><strong id="typing-time">30s</strong></div><div><small>ERRORS</small><strong id="typing-errors">0</strong></div><div><small>CONSISTENCY</small><strong id="typing-consistency">100%</strong></div></div>
+          <button id="typing-focus" class="typing-prompt-wrap" type="button" aria-label="Typing maydoniga o'tish"><div class="typing-prompt" id="typing-prompt" aria-label="Ko'chirib yoziladigan matn"></div><span class="typing-tap-hint">Yozishni boshlash uchun bosing</span></button>
+          <label class="typing-label" for="typing-input">Typing input</label>
+          <textarea id="typing-input" class="typing-input" rows="1" aria-label="Typing input" placeholder="Yuqoridagi matnni yozing..." spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea>
+          <div class="typing-bottom"><span id="typing-status" role="status">Tayyor bo'lsangiz, yozishni boshlang.</span><div class="typing-actions"><button id="typing-retry" class="btn btn--ghost" type="button">Retry ↺</button><button id="typing-reset" class="btn btn--secondary" type="button">New text ↻</button></div></div>
+          <div class="typing-progress"><span id="typing-progress"></span></div>
+        </div>
+        <p class="typing-footnote">Har bir urinish brauzeringizda hisoblanadi. Rekord yangilansa — maxfiy mukofot ochiladi.</p>
+      </div>
+    </section>
+
+    <section id="forbidden-code" class="section section--alt" aria-labelledby="forbidden-title">
+      <div class="container">
+        <p class="eyebrow">09 / Classified system</p>
+        <h2 id="forbidden-title" class="section__title">THE FORBIDDEN CODE</h2>
+        <p class="section__lead">One hidden bug. One impossible challenge. Can you find it?</p>
+        <div class="bug-hunt">
+          <div class="editor-head"><div class="editor-dots"><i></i><i></i><i></i></div><span>services/sessionService.js</span><span class="editor-live">● CHALLENGE ACTIVE</span></div>
+          <p class="editor-instructions">Kod ichidagi mantiqiy xatoni toping. Shubhali qatorni tanlang va diagnostikani ishga tushiring.</p>
+          <div class="code-editor" id="bug-code" role="listbox" aria-label="Backend kod qatorlari"></div>
+          <div class="editor-actions"><span id="bug-status" role="status">SYSTEM READY · 1 BUG HIDDEN</span><div><button class="btn btn--secondary" id="bug-hint" type="button">Hint −100 XP</button> <button class="btn btn--primary" id="bug-diagnose" type="button">RUN DIAGNOSTICS ↗</button><button class="btn btn--ghost" id="bug-restart" type="button">Reset</button></div></div>
+          <pre id="bug-terminal" class="bug-terminal" aria-live="polite">[BOOT] Secure session service loaded. Awaiting inspection...</pre>
+        </div>
+        <div id="penalty-game" class="penalty-game" hidden>
+          <div class="stadium-lights" aria-hidden="true"></div><p class="eyebrow">UNLOCKED · FINAL PROTOCOL</p><h3>THE IMPOSSIBLE PENALTY</h3>
+          <p class="jackpot-warning">SCORE THE PENALTY TO UNLOCK THE MASSIVE CASH PRIZE!</p>
+          <p class="fiction-note">FICTIONAL GAME ONLY — prize is imaginary. No real money or payment.</p>
+          <div class="stadium" aria-label="Futbol penalti mini o'yini"><div class="crowd"></div><div class="goal"><div class="net"></div><div class="keeper" id="keeper">GK</div></div><div class="pitch"></div><div class="ball" id="penalty-ball">⚽</div><div class="power-track"><span id="power-fill"></span></div></div>
+          <div class="penalty-controls"><label for="shot-direction">Shot direction</label><select id="shot-direction"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select><label for="shot-power">Power <strong id="power-label">70%</strong></label><input id="shot-power" type="range" min="20" max="100" value="70"><button id="take-shot" class="btn btn--primary" type="button">TAKE THE SHOT</button></div>
+          <p id="penalty-result" role="status" class="penalty-result">Choose your angle. The stadium is watching.</p><p id="penalty-attempts" class="typing-footnote">Attempts: 0</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="section" aria-labelledby="contact-title">
+      <div class="container contact">
+        <div>
+          <p class="eyebrow">07 / Contact</p>
+          <h2 id="contact-title" class="section__title">Bog'lanish</h2>
+          <p class="section__lead">Savol, g'oya yoki hamkorlik bo'lsa — yozing.</p>
+          <ul id="social-list" class="social">
+            <li><a href="https://github.com/ergashevabdulbosit007-bit" target="_blank" rel="noopener noreferrer"><span>GitHub</span><span>Ochish ↗</span></a></li>
+          </ul>
+        </div>
+        <form id="contact-form" class="form" novalidate>
+          <div class="field">
+            <label for="cf-name">Ism</label>
+            <input id="cf-name" name="name" type="text" autocomplete="name" maxlength="80" required aria-describedby="cf-name-err" />
+            <p id="cf-name-err" class="field__err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="cf-email">Email</label>
+            <input id="cf-email" name="email" type="email" autocomplete="email" maxlength="120" required aria-describedby="cf-email-err" />
+            <p id="cf-email-err" class="field__err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="cf-message">Xabar</label>
+            <textarea id="cf-message" name="message" rows="5" maxlength="2000" required aria-describedby="cf-message-err"></textarea>
+            <p id="cf-message-err" class="field__err" role="alert"></p>
+          </div>
+          <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <button id="cf-submit" class="btn btn--primary" type="submit">Yuborish</button>
+          <p id="cf-status" class="form__status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer"><div class="container"><p>© <span id="year"></span> ABDULBOSIT.EXE</p></div></footer>
+
+  <dialog id="theme-dialog" class="theme-dialog" aria-labelledby="theme-dialog-title">
+    <div class="dialog__head"><div><p class="eyebrow">CHANGE YOUR REALITY</p><h2 id="theme-dialog-title">Theme Universe</h2></div><button id="theme-dialog-close" class="icon-btn" type="button" aria-label="Close themes">×</button></div>
+    <div class="theme-options">
+      <button class="theme-option" data-universe="cyberpunk"><span class="theme-swatch swatch-cyber"></span><strong>Cyberpunk Neon</strong><small>Electric · Futuristic</small></button>
+      <button class="theme-option" data-universe="cosmic"><span class="theme-swatch swatch-cosmic"></span><strong>Cosmic Galaxy</strong><small>Deep space · Nebula</small></button>
+      <button class="theme-option" data-universe="obsidian"><span class="theme-swatch swatch-obsidian"></span><strong>Luxury Obsidian</strong><small>Graphite · Gold</small></button>
+      <button class="theme-option" data-universe="aurora"><span class="theme-swatch swatch-aurora"></span><strong>Holographic Aurora</strong><small>Iridescent · Glass</small></button>
+      <button class="theme-option" data-universe="inferno"><span class="theme-swatch swatch-inferno"></span><strong>Crimson Inferno</strong><small>Crimson · Fire</small></button>
+      <button class="theme-option" data-universe="emerald"><span class="theme-swatch swatch-emerald"></span><strong>Quantum Emerald</strong><small>Matrix · Energy</small></button>
+    </div>
+  </dialog>
+  <div id="prize-overlay" class="prize-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="prize-title">
+    <div class="prize-stars" aria-hidden="true"></div><div class="prize-particle-layer" id="prize-particles" aria-hidden="true"></div>
+    <div class="prize-content"><div class="prize-rune">✦</div><p class="prize-kicker">SYSTEM OVERRIDE · RECORD BROKEN</p><h2 id="prize-title">LEGENDARY<br><span>UNLOCKED</span></h2><p class="prize-copy">Sen chegarani buzib o'tding. Bu sovg'a faqat rekordchilar uchun.</p><div class="prize-art" aria-hidden="true"><div class="prize-ring ring-a"></div><div class="prize-ring ring-b"></div><div class="prize-crystal">◆</div><div class="prize-orbit">✧</div></div><div class="prize-reward"><small>MAXFIY SOVG'A</small><strong>THE INFINITE MIND</strong><span>TOP 0.001% · SPEED DEMON</span></div><button id="prize-close" class="btn btn--primary" type="button">Sovg'ani qabul qilish ✨</button></div>
+  </div>
+  <div id="toast-host" class="toast-host" aria-live="polite"></div>
+
+  <dialog id="project-dialog" class="dialog" aria-labelledby="pd-title">
+    <div class="dialog__head">
+      <h3 id="pd-title"></h3>
+      <button id="pd-close" class="icon-btn" type="button" aria-label="Yopish">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div id="pd-body" class="dialog__body"></div>
+  </dialog>
+
+  <noscript><p class="noscript">Sayt to'liq ishlashi uchun JavaScript yoqilgan bo'lishi kerak.</p></noscript>
+</body>
+</html>
